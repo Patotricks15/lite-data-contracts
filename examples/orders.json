@@ -1,0 +1,4 @@
+[
+  {"order_id": "o-1", "customer_email": "ada@example.com", "status": "paid"},
+  {"order_id": "o-2", "customer_email": "lin@example.com", "status": "shipped"}
+]

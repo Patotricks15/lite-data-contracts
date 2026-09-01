@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  open-data-contracts:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: open-data-contracts
+    volumes:
+      - ./examples:/app/examples
+    environment:
+      - PYTHONUNBUFFERED=1

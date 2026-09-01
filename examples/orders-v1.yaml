@@ -1,0 +1,14 @@
+version: 1
+dataset: analytics.orders
+owner: commerce-data
+schema:
+  - name: order_id
+    type: string
+    nullable: false
+    primary_key: true
+  - name: customer_email
+    type: string
+    nullable: false
+  - name: legacy_code
+    type: integer
+    nullable: true

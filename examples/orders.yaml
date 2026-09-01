@@ -1,0 +1,21 @@
+version: 1
+dataset: analytics.orders
+owner: commerce-data
+sla:
+  freshness: 2h
+schema:
+  - name: order_id
+    type: string
+    nullable: false
+    primary_key: true
+  - name: customer_email
+    type: string
+    nullable: false
+    classification: pii.email
+  - name: status
+    type: string
+    nullable: false
+quality:
+  - rule: accepted_values
+    column: status
+    values: [pending, paid, shipped, cancelled]
