@@ -1,53 +1,34 @@
 /**
- * Lite Data Contracts - TypeScript LLM Tool Validation Example.
+ * Lite Data Contracts - High-Level TypeScript Pipeline Example.
  *
- * Validates tool calls / structured outputs from LLM flows.
+ * Loads contract schemas directly via the Rust core engine and validates LLM tool outputs.
  */
 
-interface Contract {
-  required_fields: string[];
-}
-
-interface ValidationIssue {
-  row: number;
-  field: string;
-  message: string;
-}
-
-function validateToolArguments(contract: Contract, args: Record<string, any>): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  for (const field of contract.required_fields) {
-    if (args[field] === undefined || args[field] === null) {
-      issues.push({ row: 0, field, message: `Missing required field: ${field}` });
-    }
-  }
-  return issues;
-}
-
-async function handleLlmToolCall(rawToolOutput: string) {
-  console.log(`\nEvaluating LLM tool output: ${rawToolOutput}`);
-  const contract: Contract = {
-    required_fields: ["recipient", "subject", "body"],
-  };
-
-  const parsedArgs = JSON.parse(rawToolOutput);
-  const issues = validateToolArguments(contract, parsedArgs);
-
-  if (issues.length > 0) {
-    console.error(" -> [CONTRACT VIOLATION]:", issues);
-    throw new Error(`LLM output violates contract: ${issues.map((i) => i.message).join(", ")}`);
-  }
-
-  console.log(" -> [VALID] Tool arguments adhere to contract. Running tool execution...");
-  return { delivered: true };
-}
+import { DataContract } from '../bindings/node/index';
 
 async function main() {
-  console.log("=== Lite Data Contracts - TypeScript Example ===");
-  // Valid output
-  await handleLlmToolCall(JSON.stringify({ recipient: "dev@example.com", subject: "Deployment", body: "Release v1 ready" }));
+  console.log('=== Lite Data Contracts - High-Level TypeScript Example ===');
 
-  // Invalid output
+  // 1. Rust carrega e valida o arquivo de contrato YAML
+  const contractPath = 'examples/orders-v1.yaml';
+  console.log(`\n[1] Carregando contrato '${contractPath}' diretamente no Rust Core...`);
+  const contract = DataContract.fromFile(contractPath);
+
+  // 2. Validando saída estruturada de Tool Call
+  console.log('\n[2] Validando resposta de Tool Call gerada por LLM...');
+  const toolOutputs = [
+    { order_id: 'ORD-9901', customer_email: 'support@store.com', legacy_code: 12 },
+  ];
+
+  const issues = contract.validate(toolOutputs);
+  if (issues.length === 0) {
+    console.log(' -> Validação: APROVADO (Zero violações detectadas)');
+  } else {
+    console.log(` -> Violações: ${JSON.stringify(issues)}`);
+  }
+}
+
+main().catch(console.error);
   try {
     await handleLlmToolCall(JSON.stringify({ recipient: "dev@example.com", body: "Missing subject" }));
   } catch (err: any) {

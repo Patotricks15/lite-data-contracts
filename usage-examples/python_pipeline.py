@@ -1,49 +1,35 @@
-"""Lite Data Contracts - Python LLM Tool Validation Example.
+"""Lite Data Contracts - High-Level Python Pipeline Example.
 
-Validates structured LLM tool arguments against contracts before execution.
+Loads and validates contract schemas directly via the Rust core engine.
 """
 
-import json
+import sys
+import os
 
-# In production with compiled PyO3 bindings: from lite_data_contracts import validate_json
-# Here demonstrating the caller workflow logic:
-
-def execute_tool_with_contract_check(tool_name: str, arguments_json: str):
-    print(f"\n[1] LLM wants to execute tool: '{tool_name}' with args: {arguments_json}")
-    
-    # Contract schema definition
-    order_contract = {
-        "required_fields": ["customer_id", "amount", "currency"]
-    }
-    
-    # Validate tool call payload
-    args = json.loads(arguments_json)
-    records = [args] if isinstance(args, dict) else args
-    
-    missing_fields = []
-    for req in order_contract["required_fields"]:
-        if req not in args or args[req] is None:
-            missing_fields.append(req)
-            
-    if missing_fields:
-        error_msg = f"Validation Failed: missing required fields {missing_fields}"
-        print(f" -> [REJECTED TOOL CALL] {error_msg}")
-        return {"status": "error", "message": error_msg}
-    
-    print(" -> [PASSED] Contract validation succeeded. Executing tool...")
-    return {"status": "success", "order_id": "ord_98765"}
+# Importa o wrapper local caso o pacote não esteja no site-packages
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../bindings/python")))
+from lite_data_contracts import DataContract
 
 
 def main():
-    print("=== Lite Data Contracts - Python Tool Call Example ===")
-    
-    # Valid LLM tool call
-    valid_call = json.dumps({"customer_id": "cust_123", "amount": 150.0, "currency": "USD"})
-    execute_tool_with_contract_check("create_order", valid_call)
-    
-    # Invalid LLM tool call (hallucinated / incomplete arguments)
-    invalid_call = json.dumps({"customer_id": "cust_123", "amount": 150.0})
-    execute_tool_with_contract_check("create_order", invalid_call)
+    print("=== Lite Data Contracts - High-Level Python Example ===")
+
+    # 1. Uma única linha: Rust carrega e valida o arquivo de contrato YAML
+    contract_path = "examples/orders-v1.yaml"
+    print(f"\n[1] Carregando contrato '{contract_path}' diretamente via Rust Core...")
+    contract = DataContract.from_file(contract_path)
+
+    # 2. Saída gerada por Tool Call do LLM
+    print("\n[2] Validando Tool Call retornada pelo LLM...")
+    tool_call_output = [
+        {"order_id": "ORD-1234", "customer_email": "client@acme.com", "legacy_code": 88}
+    ]
+
+    issues = contract.validate(tool_call_output)
+    if not issues:
+        print(" -> Validação: APROVADO! O backend pode executar a ação com segurança.")
+    else:
+        print(f" -> Violações detectadas: {issues}")
 
 
 if __name__ == "__main__":

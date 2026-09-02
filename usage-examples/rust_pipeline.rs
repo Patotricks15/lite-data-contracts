@@ -1,36 +1,45 @@
 //! Lite Data Contracts - Rust Pipeline Example.
 //!
-//! Direct Rust core usage for verifying LLM structured JSON output.
+//! Demonstrates loading contracts from YAML (examples/orders-v1.yaml) and validating records.
 
-use lite_data_contracts::{validate_records, Contract};
+use lite_data_contracts::Contract;
 use serde_json::json;
+use std::error::Error;
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     println!("=== Lite Data Contracts - Rust Example ===");
 
-    let contract = Contract {
-        required_fields: vec!["user_id".to_string(), "action".to_string()],
-    };
+    // 1. Rust carrega e valida o arquivo de contrato YAML
+    let contract_path = "examples/orders-v1.yaml";
+    println!("\n[1] Carregando contrato de '{}'...", contract_path);
+    let contract = Contract::from_file(contract_path)?;
 
-    // Simulated LLM tool output
+    println!(
+        " -> Contrato '{}' carregado. Campos obrigatórios: {:?}",
+        contract.dataset, contract.required_fields
+    );
+
+    // 2. Simulando saída estruturada de Tool Call de um LLM
+    println!("\n[2] Validando saída estruturada de Tool Call do LLM...");
     let valid_tool_call = json!({
-        "user_id": "usr_42",
-        "action": "revoke_access"
+        "order_id": "ORD-9821",
+        "customer_email": "alice@example.com",
+        "legacy_code": 104
     });
 
-    let invalid_tool_call = json!({
-        "user_id": "usr_42"
-    });
-
-    println!("\n[1] Validating LLM structured output 1...");
-    let issues = validate_records(&contract, &[valid_tool_call]);
+    let issues = contract.validate_records(&[valid_tool_call]);
     if issues.is_empty() {
-        println!(" -> Valid! Executing action in backend.");
+        println!(" -> Validação: APROVADO (Zero violações)");
     }
 
-    println!("\n[2] Validating LLM structured output 2...");
-    let issues2 = validate_records(&contract, &[invalid_tool_call]);
-    if !issues2.is_empty() {
-        println!(" -> Rejected: Found {} issue(s): {:?}", issues2.len(), issues2);
-    }
+    // 3. Simulando saída corrompida / com alucinação de campo ausente
+    let malformed_tool_call = json!({
+        "order_id": "ORD-9822"
+        // customer_email ausente
+    });
+
+    let issues = contract.validate_records(&[malformed_tool_call]);
+    println!(" -> Validação de payload inválido: {} problemas detectados: {:?}", issues.len(), issues);
+
+    Ok(())
 }
