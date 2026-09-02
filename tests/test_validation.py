@@ -31,4 +31,4 @@ quality:
     )
 
     assert not result.valid
-    assert [issue.code for issue in result.issues] == ["not_null", "unique", "accepted_values"]
+    assert [issue.code for issue in result.issues] == ["not_null", "not_null", "unique", "accepted_values"]

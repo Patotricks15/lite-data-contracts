@@ -1,0 +1,1 @@
+export declare function validateJson(contractJson: string, recordsJson: string): string;

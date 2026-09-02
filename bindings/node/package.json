@@ -1,0 +1,9 @@
+{
+  "name": "@lite/data-contracts",
+  "version": "0.1.0",
+  "description": "Node.js SDK for Lite Data Contracts",
+  "types": "index.d.ts",
+  "files": ["index.d.ts", "index.js"],
+  "scripts": { "build": "napi build --platform --release" },
+  "devDependencies": { "@napi-rs/cli": "^2.18.4" }
+}
